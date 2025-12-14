@@ -404,6 +404,10 @@ class Initializer:
             cls._link_fields = {}
         for k, v in get_model_fields(cls).items():
             path = v.alias or k
+            if get_extra_field_info(v, "use_serialization_alias"):
+                serialization_alias = getattr(v, "serialization_alias", None)
+                if serialization_alias:
+                    path = serialization_alias
             setattr(cls, k, ExpressionField(path))
 
             link_info = self.detect_link(v, k)
@@ -640,6 +644,10 @@ class Initializer:
             cls._link_fields = {}
         for k, v in get_model_fields(cls).items():
             path = v.alias or k
+            if get_extra_field_info(v, "use_serialization_alias"):
+                serialization_alias = getattr(v, "serialization_alias", None)
+                if serialization_alias:
+                    path = serialization_alias
             setattr(cls, k, ExpressionField(path))
             link_info = self.detect_link(v, k)
             depth_level = cls.get_settings().max_nesting_depths_per_field.get(
