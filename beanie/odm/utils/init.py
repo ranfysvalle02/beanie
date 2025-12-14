@@ -403,11 +403,7 @@ class Initializer:
         if cls._link_fields is None:
             cls._link_fields = {}
         for k, v in get_model_fields(cls).items():
-            path = v.alias or k
-            if get_extra_field_info(v, "use_serialization_alias"):
-                serialization_alias = getattr(v, "serialization_alias", None)
-                if serialization_alias:
-                    path = serialization_alias
+            path = getattr(v, "serialization_alias", None) or v.alias or k
             setattr(cls, k, ExpressionField(path))
 
             link_info = self.detect_link(v, k)
@@ -520,7 +516,9 @@ class Initializer:
                 IndexModel(
                     [
                         (
-                            fvalue.alias or k,
+                            getattr(fvalue, "serialization_alias", None)
+                            or fvalue.alias
+                            or k,
                             indexed_attrs[0],
                         )
                     ],
@@ -563,6 +561,11 @@ class Initializer:
                 old_indexes, new_indexes
             ):
                 await collection.drop_index(index.name)
+        else:
+            if IndexModelField.list_difference(
+                old_indexes, new_indexes
+            ) and IndexModelField.list_difference(new_indexes, old_indexes):
+                await collection.drop_indexes()
 
         # create indices
         if found_indexes:
@@ -643,11 +646,7 @@ class Initializer:
         if cls._link_fields is None:
             cls._link_fields = {}
         for k, v in get_model_fields(cls).items():
-            path = v.alias or k
-            if get_extra_field_info(v, "use_serialization_alias"):
-                serialization_alias = getattr(v, "serialization_alias", None)
-                if serialization_alias:
-                    path = serialization_alias
+            path = getattr(v, "serialization_alias", None) or v.alias or k
             setattr(cls, k, ExpressionField(path))
             link_info = self.detect_link(v, k)
             depth_level = cls.get_settings().max_nesting_depths_per_field.get(

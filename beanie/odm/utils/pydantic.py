@@ -37,6 +37,15 @@ def get_model_fields(model):
 
 def parse_model(model_type: Type[BaseModel], data: Any):
     if IS_PYDANTIC_V2:
+        if isinstance(data, dict):
+            for k, field in get_model_fields(model_type).items():
+                serialization_alias = getattr(
+                    field, "serialization_alias", None
+                )
+                if serialization_alias and serialization_alias in data:
+                    if k not in data:
+                        data[k] = data.pop(serialization_alias)
+
         return model_type.model_validate(data)
     else:
         return model_type.parse_obj(data)
